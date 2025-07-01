@@ -1,4 +1,3 @@
-// Replace this with your real server endpoint
 const SERVER_URL = 'https://mocki.io/v1/YOUR-API-ENDPOINT';
 
 let quotes = JSON.parse(localStorage.getItem('quotes')) || [
@@ -78,6 +77,32 @@ function addQuote() {
   categoryInput.value = '';
 }
 
+// ✅ Dynamically creates the quote form
+function createAddQuoteForm() {
+  const formContainer = document.createElement('div');
+  formContainer.style.marginTop = '30px';
+
+  const quoteInput = document.createElement('input');
+  quoteInput.id = 'newQuoteText';
+  quoteInput.type = 'text';
+  quoteInput.placeholder = 'Enter a new quote';
+
+  const categoryInput = document.createElement('input');
+  categoryInput.id = 'newQuoteCategory';
+  categoryInput.type = 'text';
+  categoryInput.placeholder = 'Enter quote category';
+
+  const addBtn = document.createElement('button');
+  addBtn.textContent = 'Add Quote';
+  addBtn.onclick = addQuote;
+
+  formContainer.appendChild(quoteInput);
+  formContainer.appendChild(categoryInput);
+  formContainer.appendChild(addBtn);
+
+  document.body.appendChild(formContainer);
+}
+
 function importFromJsonFile(event) {
   const fileReader = new FileReader();
   fileReader.onload = function(e) {
@@ -147,6 +172,6 @@ document.getElementById('newQuote').addEventListener('click', showRandomQuote);
 window.onload = () => {
   populateCategories();
   filterQuotes();
-  // Auto-sync every 30 seconds
+  createAddQuoteForm(); // 👈 builds the form on page load
   setInterval(syncWithServer, 30000);
 };
