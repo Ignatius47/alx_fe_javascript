@@ -27,23 +27,23 @@ function populateCategories() {
 }
 
 function filterQuotes() {
-  const category = document.getElementById('categoryFilter').value;
-  localStorage.setItem('lastCategory', category);
+  const selectedCategory = document.getElementById('categoryFilter').value;
+  localStorage.setItem('lastCategory', selectedCategory);
 
-  const filtered = category === 'all'
+  const filteredQuotes = selectedCategory === 'all'
     ? quotes
-    : quotes.filter(q => q.category === category);
+    : quotes.filter(q => q.category === selectedCategory);
 
   const quoteDisplay = document.getElementById('quoteDisplay');
   quoteDisplay.innerHTML = '';
 
-  if (filtered.length === 0) {
+  if (filteredQuotes.length === 0) {
     quoteDisplay.textContent = 'No quotes in this category.';
     return;
   }
 
-  const randomIndex = Math.floor(Math.random() * filtered.length);
-  const quote = filtered[randomIndex];
+  const randomIndex = Math.floor(Math.random() * filteredQuotes.length);
+  const quote = filteredQuotes[randomIndex];
 
   sessionStorage.setItem('lastQuote', JSON.stringify(quote));
 
@@ -77,7 +77,7 @@ function addQuote() {
   categoryInput.value = '';
 }
 
-// ✅ Dynamically creates the quote form
+// ✅ Dynamically creates the quote input form
 function createAddQuoteForm() {
   const formContainer = document.createElement('div');
   formContainer.style.marginTop = '30px';
@@ -172,6 +172,6 @@ document.getElementById('newQuote').addEventListener('click', showRandomQuote);
 window.onload = () => {
   populateCategories();
   filterQuotes();
-  createAddQuoteForm(); // 👈 builds the form on page load
-  setInterval(syncWithServer, 30000);
+  createAddQuoteForm(); // 👈 build form on load
+  setInterval(syncWithServer, 30000); // auto-sync every 30s
 };
