@@ -104,68 +104,65 @@ function createAddQuoteForm() {
   document.body.appendChild(formContainer);
 }
 
-function importFromJsonFile(event) {
-  const fileReader = new FileReader();
-  fileReader.onload = function(e) {
-    try {
-      const importedQuotes = JSON.parse(e.target.result);
-      const valid = importedQuotes.filter(q => q.text && q.category);
-      quotes.push(...valid);
-      saveQuotes();
-      populateCategories();
-      alert('Quotes imported successfully!');
-    } catch {
-      alert('Invalid JSON file.');
-    }
-  };
-  fileReader.readAsText(event.target.files[0]);
+function fetchQuotesFromServer() {
+  return fetch(SERVER_URL).then(res => res.json());
 }
 
-function exportToJsonFile() {
-  const dataStr = JSON.stringify(quotes, null, 2);
-  const blob = new Blob([dataStr], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'quotes.json';
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
-function syncWithServer() {
-  fetch(SERVER_URL)
-    .then(response => response.json())
+function syncQuotes() {
+  fetchQuotesFromServer()
     .then(serverQuotes => {
-      let added = 0, replaced = 0;
+      let added = 0;
+      let updated = 0;
 
       serverQuotes.forEach(serverQuote => {
-        const match = quotes.find(local => local.text === serverQuote.text);
-        if (!match) {
+        const existing = quotes.find(q => q.text === serverQuote.text);
+        if (!existing) {
           quotes.push(serverQuote);
           added++;
-        } else if (JSON.stringify(match) !== JSON.stringify(serverQuote)) {
-          Object.assign(match, serverQuote);
-          replaced++;
+        } else if (JSON.stringify(existing) !== JSON.stringify(serverQuote)) {
+          Object.assign(existing, serverQuote); // server wins
+          updated++;
         }
       });
 
-      if (added || replaced) {
+      if (added || updated) {
         saveQuotes();
         populateCategories();
       }
 
-      const syncMsg = `Sync complete: ${added} added, ${replaced} replaced.`;
-      notifySyncStatus(syncMsg);
+      notifySyncStatus(`Sync complete: ${added} added, ${updated} updated.`);
     })
-    .catch(() => notifySyncStatus('Failed to sync with server.', true));
+    .catch(() => {
+      notifySyncStatus('Failed to sync with server.', true);
+    });
 }
 
 function notifySyncStatus(message, isError = false) {
-  const status = document.getElementById('syncStatus');
+  let status = document.getElementById('syncStatus');
+  if (!status) {
+    status = document.createElement('div');
+    status.id = 'syncStatus';
+    status.style.marginTop = '15px';
+    document.body.appendChild(status);
+  }
+
   status.textContent = message;
   status.style.color = isError ? 'red' : 'green';
-  setTimeout(() => (status.textContent = ''), 5000);
+
+  setTimeout(() => {
+    status.textContent = '';
+  }, 4000);
+}
+
+// Optional: post quotes to server (only if API supports it)
+function postQuoteToServer(quote) {
+  fetch(SERVER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(quote)
+  }).catch(() => {
+    console.log('Failed to post quote to server.');
+  });
 }
 
 document.getElementById('newQuote').addEventListener('click', showRandomQuote);
@@ -174,5 +171,5 @@ window.onload = () => {
   populateCategories();
   filterQuotes();
   createAddQuoteForm();
-  setInterval(syncWithServer, 30000);
+  setInterval(syncQuotes, 30000);
 };
