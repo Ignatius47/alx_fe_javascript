@@ -1,5 +1,7 @@
 const SERVER_URL = 'https://mocki.io/v1/YOUR-API-ENDPOINT';
 
+let selectedCategory = localStorage.getItem('lastCategory') || 'all';
+
 let quotes = JSON.parse(localStorage.getItem('quotes')) || [
   { text: "The only limit to our realization of tomorrow is our doubts of today.", category: "Motivation" },
   { text: "Life is really simple, but we insist on making it complicated.", category: "Life" },
@@ -12,7 +14,6 @@ function saveQuotes() {
 
 function populateCategories() {
   const filter = document.getElementById('categoryFilter');
-  const selected = localStorage.getItem('lastCategory') || 'all';
   const categories = [...new Set(quotes.map(q => q.category))];
 
   filter.innerHTML = '<option value="all">All Categories</option>';
@@ -23,11 +24,11 @@ function populateCategories() {
     filter.appendChild(option);
   });
 
-  filter.value = selected;
+  filter.value = selectedCategory;
 }
 
 function filterQuotes() {
-  const selectedCategory = document.getElementById('categoryFilter').value;
+  selectedCategory = document.getElementById('categoryFilter').value;
   localStorage.setItem('lastCategory', selectedCategory);
 
   const filteredQuotes = selectedCategory === 'all'
@@ -77,7 +78,7 @@ function addQuote() {
   categoryInput.value = '';
 }
 
-// ✅ Dynamically creates the quote input form
+// Dynamically creates the quote input form
 function createAddQuoteForm() {
   const formContainer = document.createElement('div');
   formContainer.style.marginTop = '30px';
@@ -172,6 +173,6 @@ document.getElementById('newQuote').addEventListener('click', showRandomQuote);
 window.onload = () => {
   populateCategories();
   filterQuotes();
-  createAddQuoteForm(); // 👈 build form on load
-  setInterval(syncWithServer, 30000); // auto-sync every 30s
+  createAddQuoteForm();
+  setInterval(syncWithServer, 30000);
 };
