@@ -111,7 +111,7 @@ async function fetchQuotesFromServer() {
   const data = await response.json();
   return data.map(post => ({
     text: post.title,
-    category: 'Imported' // Default category for demo
+    category: 'Imported'
   }));
 }
 
@@ -141,11 +141,10 @@ async function syncQuotes() {
     });
 
     if (added > 0) {
-      saveQuotes();
-      populateCategories();
-    }
-
-    notifySyncStatus(`Sync complete: ${added} new quotes.`);
+  saveQuotes();
+  populateCategories();
+}
+  notifySyncStatus("Quotes synced with server!");
   } catch (err) {
     notifySyncStatus('Failed to sync with server.', true);
   }
