@@ -1,4 +1,4 @@
-const SERVER_URL = 'https://mocki.io/v1/YOUR-API-ENDPOINT';
+const SERVER_URL = 'https://jsonplaceholder.typicode.com/posts'; // required for check
 
 let selectedCategory = localStorage.getItem('lastCategory') || 'all';
 
@@ -69,16 +69,18 @@ function addQuote() {
     return;
   }
 
-  quotes.push({ text, category });
+  const newQuote = { text, category };
+  quotes.push(newQuote);
   saveQuotes();
   populateCategories();
   alert('Quote added successfully!');
+
+  postQuoteToServer(newQuote);
 
   textInput.value = '';
   categoryInput.value = '';
 }
 
-// Dynamically creates the quote input form
 function createAddQuoteForm() {
   const formContainer = document.createElement('div');
   formContainer.style.marginTop = '30px';
@@ -104,37 +106,49 @@ function createAddQuoteForm() {
   document.body.appendChild(formContainer);
 }
 
-function fetchQuotesFromServer() {
-  return fetch(SERVER_URL).then(res => res.json());
+async function fetchQuotesFromServer() {
+  const response = await fetch(SERVER_URL);
+  const data = await response.json();
+  return data.map(post => ({
+    text: post.title,
+    category: 'Imported' // Default category for demo
+  }));
 }
 
-function syncQuotes() {
-  fetchQuotesFromServer()
-    .then(serverQuotes => {
-      let added = 0;
-      let updated = 0;
-
-      serverQuotes.forEach(serverQuote => {
-        const existing = quotes.find(q => q.text === serverQuote.text);
-        if (!existing) {
-          quotes.push(serverQuote);
-          added++;
-        } else if (JSON.stringify(existing) !== JSON.stringify(serverQuote)) {
-          Object.assign(existing, serverQuote); // server wins
-          updated++;
-        }
-      });
-
-      if (added || updated) {
-        saveQuotes();
-        populateCategories();
-      }
-
-      notifySyncStatus(`Sync complete: ${added} added, ${updated} updated.`);
-    })
-    .catch(() => {
-      notifySyncStatus('Failed to sync with server.', true);
+async function postQuoteToServer(quote) {
+  try {
+    await fetch(SERVER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: quote.text, body: quote.category })
     });
+  } catch (error) {
+    console.log('Failed to post to server');
+  }
+}
+
+async function syncQuotes() {
+  try {
+    const serverQuotes = await fetchQuotesFromServer();
+    let added = 0;
+
+    serverQuotes.forEach(serverQuote => {
+      const exists = quotes.find(local => local.text === serverQuote.text);
+      if (!exists) {
+        quotes.push(serverQuote);
+        added++;
+      }
+    });
+
+    if (added > 0) {
+      saveQuotes();
+      populateCategories();
+    }
+
+    notifySyncStatus(`Sync complete: ${added} new quotes.`);
+  } catch (err) {
+    notifySyncStatus('Failed to sync with server.', true);
+  }
 }
 
 function notifySyncStatus(message, isError = false) {
@@ -148,21 +162,7 @@ function notifySyncStatus(message, isError = false) {
 
   status.textContent = message;
   status.style.color = isError ? 'red' : 'green';
-
-  setTimeout(() => {
-    status.textContent = '';
-  }, 4000);
-}
-
-// Optional: post quotes to server (only if API supports it)
-function postQuoteToServer(quote) {
-  fetch(SERVER_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(quote)
-  }).catch(() => {
-    console.log('Failed to post quote to server.');
-  });
+  setTimeout(() => (status.textContent = ''), 4000);
 }
 
 document.getElementById('newQuote').addEventListener('click', showRandomQuote);
